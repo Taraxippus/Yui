@@ -276,7 +276,7 @@ public class Quaternion
 
         return angle;
     }
-
+	
     public Quaternion rotateX(final float angle)
     {
         final float halfAngle = 0.5F * angle;

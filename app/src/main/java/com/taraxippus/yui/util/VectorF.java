@@ -3,6 +3,7 @@ package com.taraxippus.yui.util;
 import android.opengl.*;
 import java.nio.*;
 import java.util.Vector;
+import java.util.ArrayList;
 
 public class VectorF
 {
@@ -352,6 +353,17 @@ public class VectorF
         return this;
     }
 
+	public VectorF rotate(Quaternion q)
+	{
+		VectorF tmp = VectorF.obtain().set(q.x, q.y, q.z).cross(this).multiplyBy(2);
+		VectorF tmp2 = VectorF.obtain().set(q.x, q.y, q.z);
+		
+		this.add(tmp2.cross(tmp)).add(tmp.multiplyBy(q.w));
+		tmp.release();
+		tmp2.release();
+		return this;
+	}
+	
     public VectorF toEuler()
     {
         while (x < 0)
@@ -540,9 +552,48 @@ public class VectorF
     {
         return Float.SIZE / 8 * 3;
     }
+	
+	public static float[] toArrayList(ArrayList<VectorF> list, boolean release)
+	{
+		float[] array = new float[list.size() * 3];
+		
+		VectorF v;
 
+        for (int i = 0; i < list.size(); ++i)
+        {
+            v = list.get(i);
+			array[i * 3] = v.x;
+			array[i * 3 + 1] = v.y;
+			array[i * 3 + 2] = v.z;
+			
+			if (release)
+				v.release();
+        }
+		
+		return array;
+	}
+	
+	public static final ArrayList<VectorF> copyList(ArrayList<VectorF> list)
+	{
+		final ArrayList<VectorF> newList = new ArrayList<>();
+		
+        for (int i = 0; i < list.size(); ++i)
+			newList.add(obtain().set(list.get(i)));
+
+		return newList;
+	}
+	
+	public static final ArrayList<VectorF> copyToList(ArrayList<VectorF> list, ArrayList<VectorF> newVectors, VectorF offset)
+	{
+        for (int i = 0; i < newVectors.size(); ++i)
+			list.add(obtain().set(newVectors.get(i)).add(offset));
+
+		return list;
+	}
+	
     private static final Vector<VectorF> pool = new Vector<>();
-
+	private static final int MAX_POOL_SIZE = 1024;
+	
     public static VectorF obtain()
     {
         if (pool.isEmpty())
@@ -553,7 +604,8 @@ public class VectorF
 
     public static VectorF release(VectorF tmp)
     {
-        pool.add(tmp);
+		if (pool.size() < MAX_POOL_SIZE)
+        	pool.add(tmp);
         return tmp;
     }
 

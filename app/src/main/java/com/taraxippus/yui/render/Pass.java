@@ -100,9 +100,19 @@ public class Pass
 		return attributes;
 	}
 	
+	public String[] getAttributeNames()
+	{
+		return attributeNames;
+	}
+	
 	public Framebuffer getFramebuffer()
 	{
 		return framebuffer;
+	}
+	
+	public int getFramebufferTexUnit()
+	{
+		return -1;
 	}
 	
 	public boolean inOrder()
@@ -118,6 +128,51 @@ public class Pass
 	public void onRender(Renderer renderer)
 	{
 		this.getProgram().use();
+	}
+	
+	public boolean usesAttribute(String attribute)
+	{
+		for (String s : attributeNames)
+			if (s.equals(attribute))
+				return true;
+
+		return false;
+	}
+	
+	public boolean usesMatrix(String matrix)
+	{
+		for (String s : matrices)
+			if (s.equals(matrix))
+				return true;
+		
+		return false;
+	}
+	
+	public int getStride()
+	{
+		int stride = 0;
+		for (int i : attributes)
+			stride += i;
+		
+		return stride;
+	}
+	
+	public int getAttributeIndex(String attribute)
+	{
+		int offset = 0;
+		int i;
+		for (i = 0; i < attributeNames.length; ++i)
+		{
+			if (attributeNames[i].equals(attribute))
+				break;
+
+			offset += attributes[i];
+		}
+		
+		if (i == attributeNames.length)
+			throw new RuntimeException("This pass has no attribute \"" + attributeNames + "\"!");
+		
+		return offset;
 	}
 	
 	public void uniform(Renderer renderer, float[] modelMatrix, float[] normalMatrix)
@@ -172,7 +227,8 @@ public class Pass
 				GLES20.glUniform1i(getProgram().getUniform("u_Texture"), textureUnit);
 		}
 
-		public int getTextureUnit()
+		@Override
+		public int getFramebufferTexUnit()
 		{
 			return textureUnit;
 		}
@@ -224,7 +280,7 @@ public class Pass
 			dither.init(Bitmap.createBitmap(colors, 0, main.renderer.width, main.renderer.width, main.renderer.height, Bitmap.Config.RGB_565), GLES20.GL_NEAREST, GLES20.GL_NEAREST, GLES20.GL_CLAMP_TO_EDGE);
 			dither.bind(ditherTexUnit);
 			
-			GLES20.glUniform1i(getProgram().getUniform("u_Texture"), getTextureUnit());
+			GLES20.glUniform1i(getProgram().getUniform("u_Texture"), getFramebufferTexUnit());
 			GLES20.glUniform1i(getProgram().getUniform("u_Dither"), ditherTexUnit);
 			for (int i = 0; i < combinePasses.length; ++i)
 				GLES20.glUniform1i(getProgram().getUniform("u_Combine" + i), combinePasses[i]);
@@ -263,11 +319,62 @@ public class Pass
 		}
 	}
 	
-	public class Bloom extends Post
+	public static class Bloom extends Post
 	{
-		public Bloom(Main main, int frameBufferWidth, int frameBufferHeight)
+		final float r, g, b, constant;
+		
+		public Bloom(Main main, int frameBufferWidth, int frameBufferHeight, boolean dir, float r, float g, float b, float constant)
 		{
 			super(main, R.raw.vertex_bloom, R.raw.fragment_bloom1, frameBufferWidth, frameBufferHeight, false);
+
+			this.r = r;
+			this.g = g;
+			this.b = b;
+			this.constant = constant;
+			
+			initProgram(main, R.raw.vertex_bloom, R.raw.fragment_bloom1);
+			GLES20.glUniform2f(getProgram().getUniform("u_InvResolution"), 1F / getFramebuffer().width, 1F / getFramebuffer().height);
+			GLES20.glUniform2f(getProgram().getUniform("u_Dir"), dir ? 1 : 0, dir ? 0 : 1);
+		}
+		
+		public Bloom(Main main, int frameBufferWidth, int frameBufferHeight, boolean dir)
+		{
+			super(main, R.raw.vertex_bloom, R.raw.fragment_bloom2, frameBufferWidth, frameBufferHeight, false);
+			
+			r = g = b = 0;
+			constant = Float.NaN;
+			
+			initProgram(main, R.raw.vertex_bloom, R.raw.fragment_bloom2);
+			GLES20.glUniform2f(getProgram().getUniform("u_InvResolution"), 1F / getFramebuffer().width, 1F / getFramebuffer().height);
+			GLES20.glUniform2f(getProgram().getUniform("u_Dir"), dir ? 1 : 0, dir ? 0 : 1);
+		}
+
+		@Override
+		public boolean initInConstructor()
+		{
+			return false;
+		}
+		
+		@Override
+		protected String modifyFragmentShader(String shader)
+		{
+			shader = shader.replace("*Filter*", "vec4(pixel.rgb * max(0.0, length(pixel.rgb * vec3(" + r + ", " + g + ", " + b + ")) + " + constant +"), 1.0)");
+			
+			return super.modifyFragmentShader(shader);
+		}
+		
+		public void setInputTexture(int texUnit)
+		{
+			getProgram().use();
+			GLES20.glUniform1i(getProgram().getUniform("u_Texture"), texUnit);
+		}
+
+		@Override
+		public void onRender(Renderer renderer)
+		{
+			getFramebuffer().bind();
+			
+			super.onRender(renderer);
 		}
 	}
 }

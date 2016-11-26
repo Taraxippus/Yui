@@ -9,6 +9,7 @@ import com.taraxippus.yui.util.VectorF;
 public abstract class Game implements View.OnTouchListener
 {
 	public final Main main;
+	private boolean defaultCamera;
 	
 	public Game(Main main)
 	{
@@ -19,12 +20,12 @@ public abstract class Game implements View.OnTouchListener
 	
 	public void update()
 	{
-		if (pointerRight != -1)
+		if (pointerRight != -1 && defaultCamera)
 			main.camera.position.add(VectorF.obtain()
 								 .set(newXRight - lastXRight, 0, newYRight - lastYRight)
 								 .rotateX(main.camera.rotation.x)
 								 .rotateY(main.camera.rotation.y)
-								 .multiplyBy(Main.FIXED_DELTA * 4.5F)
+								 .multiplyBy(Main.FIXED_DELTA * Camera.Z_FAR * 0.25F)
 								 .release());
 								 
 		main.camera.update();
@@ -40,11 +41,15 @@ public abstract class Game implements View.OnTouchListener
 	
 	public void onTap(MotionEvent e) {}
 	
-
+	public void setUseDefaultCamera(boolean defaultCamera)
+	{
+		this.defaultCamera = defaultCamera;
+	}
+	
 	int pointerLeft = -1;
 	int pointerRight = -1;
 
-	float lastXLeft, lastYLeft;
+	float lastXLeft, lastYLeft, newXLeft, newYLeft;
 	float lastXRight, lastYRight, newXRight, newYRight;
 
 	@Override
@@ -62,8 +67,8 @@ public abstract class Game implements View.OnTouchListener
 					if (pointerLeft == -1)
 					{
 						pointerLeft = pointer;
-						lastXLeft = event.getX(index) / (float) v.getWidth();
-						lastYLeft = event.getY(index) / (float) v.getHeight();
+						newXLeft = lastXLeft = event.getX(index) / (float) v.getWidth();
+						newYLeft = lastYLeft = event.getY(index) / (float) v.getHeight();
 					}
 				}
 				else if (pointerRight == -1)
@@ -79,20 +84,22 @@ public abstract class Game implements View.OnTouchListener
 
 				if (index != -1)
 				{
-					main.camera.rotation.y += (lastXLeft - event.getX(index) / v.getWidth()) * 180;
-					main.camera.rotation.x += (lastYLeft - event.getY(index) / v.getHeight()) * 180;
-
-					lastXLeft = event.getX(index) / (float) v.getWidth();
-					lastYLeft = event.getY(index) / (float) v.getHeight();
+					onMovePointerLeft(v, event, index);
+					
+					newXLeft = event.getX(index) / (float) v.getWidth();
+					newYLeft = event.getY(index) / (float) v.getHeight();
 				}
-
+					
 				index = event.findPointerIndex(pointerRight);
 
 				if (index != -1)
 				{
+					onMovePointerRight(v, event, index);
+					
 					newXRight = event.getX(index) / (float) v.getWidth();
 					newYRight = event.getY(index) / (float) v.getHeight();
 				}
+					
 				break;
 
 			case MotionEvent.ACTION_CANCEL:
@@ -113,4 +120,15 @@ public abstract class Game implements View.OnTouchListener
 
         return true;
     }
+	
+	public void onMovePointerLeft(View v, MotionEvent event, int index)
+	{
+		if (defaultCamera)
+		{
+			main.camera.rotation.y += (newXLeft - event.getX(index) / v.getWidth()) * 180;
+			main.camera.rotation.x += (newYLeft - event.getY(index) / v.getHeight()) * 180;
+		}
+	}
+	
+	public void onMovePointerRight(View v, MotionEvent event, int index) {}
 }

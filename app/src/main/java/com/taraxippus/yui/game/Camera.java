@@ -9,7 +9,7 @@ import android.widget.*;
 public class Camera
 {
 	public static final float Z_NEAR = 0.05F;
-	public static final float Z_FAR = 12F;
+	public static final float Z_FAR = 50F;
 	public static final float FOV = 60;
 	
 	public static final float FOLLOW_SMOOTHNESS = 1F;

@@ -8,17 +8,18 @@ public abstract class Model
 {
 	public final Pass pass;
 	final Shape shape = new Shape();
-	final Shape outlineShape = new Shape();
-	private float[] vertices, verticesOutline;
-	private short[] indices, indicesOutline;
-	private int usesShape, usesOutline;
-	boolean generateOutlineNormals = true, weightNormals = false;
+	final Shape smoothShape = new Shape();
+	private float[] vertices, verticesSmooth;
+	private short[] indices, indicesSmooth;
+	private int usesShape, usesSmoothShape;
+	boolean generateShapeNormals = false, generateSmoothNormals = true, weightNormals = false;
 	boolean freeSpace = true;
 	int shapeType = GLES20.GL_TRIANGLES;
 	
 	public Model(Pass pass)
 	{
 		this.pass = pass;
+		this.generateShapeNormals = pass.usesAttribute("a_Normal");
 	}
 	
 	public void init()
@@ -28,10 +29,10 @@ public abstract class Model
 			this.vertices = getVertices();
 			this.indices = getIndices();
 		}
-		if (verticesOutline == null)
+		if (verticesSmooth == null)
 		{
-			this.verticesOutline = getOutlineVertices();
-			this.indicesOutline = getOutlineIndices();
+			this.verticesSmooth = getSmoothVertices();
+			this.indicesSmooth = getSmoothIndices();
 		}
 	}
 
@@ -44,16 +45,16 @@ public abstract class Model
 		return shape;
 	}
 
-	public Shape getOutlineShape()
+	public Shape getSmoothShape()
 	{
 		if (pass.getParent() == pass)
 			return null;
 		
-		if (!outlineShape.initialized())
-			createOutlineShape();
+		if (!smoothShape.initialized())
+			createSmoothShape();
 
-		usesOutline++;
-		return outlineShape;
+		usesSmoothShape++;
+		return smoothShape;
 	}
 
 	public void deleteShape()
@@ -64,56 +65,65 @@ public abstract class Model
 			shape.delete();
 	}
 
-	public void deleteOutlineShape()
+	public void deleteSmoothShape()
 	{
-		usesOutline--;
+		usesSmoothShape--;
 
-		if (usesOutline == 0 && outlineShape.initialized())
-			outlineShape.delete();
+		if (usesSmoothShape == 0 && smoothShape.initialized())
+			smoothShape.delete();
 	}
 
 	public Shape createShape()
 	{
 		init();
 		
-		shape.init(shapeType, vertices, indices, pass.getParent().getAttributes());
+		if (generateShapeNormals)
+			shape.initGenerateFlatNormals(shapeType, Shape.addNormals(vertices, pass), indices, pass.getParent());
+
+		else
+			shape.init(shapeType, vertices, indices, pass.getParent().getAttributes());
 		
 		if (freeSpace)
 		{
 			vertices = null;
 			indices = null;
+			freeShapeSpace();
 		}
 		return shape;
 	}
 
-	public Shape createOutlineShape()
+	public Shape createSmoothShape()
 	{
 		init();
 		
-		if (generateOutlineNormals)
-			outlineShape.initGenerateNormals(shapeType, Shape.addNormals(verticesOutline, pass.getAttributes()), indicesOutline, weightNormals, pass.getAttributes());
+		if (generateSmoothNormals)
+			smoothShape.initGenerateNormals(shapeType, Shape.addNormals(verticesSmooth, pass), indicesSmooth, weightNormals, pass);
 		
 		else
-			outlineShape.init(shapeType, verticesOutline, indicesOutline, pass.getAttributes());
+			smoothShape.init(shapeType, verticesSmooth, indicesSmooth, pass.getAttributes());
 		
 		if (freeSpace)
 		{
-			verticesOutline = null;
-			indicesOutline = null;
+			verticesSmooth = null;
+			indicesSmooth = null;
+			freeSmoothShapeSpace();
 		}
 		
 		return shape;
 	}
 
+	protected void freeShapeSpace() {}
+	protected void freeSmoothShapeSpace() {}
+	
 	public abstract float[] getVertices();
 	public abstract short[] getIndices();
 	
-	public float[] getOutlineVertices()
+	public float[] getSmoothVertices()
 	{
 		return vertices;
 	}
 	
-	public short[] getOutlineIndices()
+	public short[] getSmoothIndices()
 	{
 		return indices;
 	}

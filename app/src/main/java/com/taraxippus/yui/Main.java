@@ -59,7 +59,7 @@ public abstract class Main extends Activity implements View.OnTouchListener
 	public abstract Pass[] getPasses();
 	public abstract Pass getDefaultPass();
 	public abstract Pass getDefaultParticlePass();
-	public abstract Pass getFirstPostPass();
+	public abstract Pass getPostPass();
 	
 	public GLSurfaceView.EGLConfigChooser getConfigChooser() { return new ConfigChooser(this); }
 	public VectorF getClearColor() { return new VectorF(0, 0, 0); }

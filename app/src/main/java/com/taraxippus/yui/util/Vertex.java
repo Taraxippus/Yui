@@ -15,7 +15,7 @@ public class Vertex
 		System.arraycopy(vertices, offset, vertexData, 0, stride);
 	}
 	
-	public void add(ArrayList<Float> vertices, ArrayList<Short> indices, int indicesIndex, VectorF normal)
+	public void add(ArrayList<Float> vertices, ArrayList<Short> indices, int indicesIndex, VectorF normal, int normalIndex)
 	{
 		if (normals.isEmpty())
 		{
@@ -39,9 +39,9 @@ public class Vertex
 		instances.add((short) (vertices.size() / vertexData.length));
 		indices.set(indicesIndex, instances.get(instances.size() - 1));
 		
-		vertexData[vertexData.length - 3] = normal.x;
-		vertexData[vertexData.length - 2] = normal.y;
-		vertexData[vertexData.length - 1] = normal.z;
+		vertexData[normalIndex] = normal.x;
+		vertexData[normalIndex + 1] = normal.y;
+		vertexData[normalIndex + 2] = normal.z;
 		
 		for (int i = 0; i < vertexData.length; ++i)
 			vertices.add(vertexData[i]);

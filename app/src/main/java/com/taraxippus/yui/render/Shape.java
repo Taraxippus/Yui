@@ -22,25 +22,27 @@ public class Shape
 		
 	}
 	
-	public static final float[] addNormals(float[] vertices, int... attributes)
+	public static final float[] addNormals(float[] vertices, Pass pass)
 	{
-		int stride = 0;
-		for (int i : attributes)
-			stride += i;
-			
+		int index = pass.getAttributeIndex("a_Normal"), stride = pass.getStride();
+		
 		float[] vertices1 = new float[vertices.length / (stride - 3) * stride];
 		for (int i = 0; i < vertices.length; i += stride - 3)
-			System.arraycopy(vertices, i, vertices1, i / (stride - 3) * stride, stride - 3);
-	
+		{
+			if (index != 0)
+				System.arraycopy(vertices, i, vertices1, i / (stride - 3) * stride, index);
+			
+			if (index != stride - 3)
+				System.arraycopy(vertices, i + index, vertices1, i / (stride - 3) * stride + index + 3, stride - index - 3);
+		}
+			
 		return vertices1;
 	}
 	
-	public void initGenerateNormals(int type, float[] vertices, short indices[], boolean weight, int... attributes)
+	public void initGenerateNormals(int type, float[] vertices, short indices[], boolean weight, Pass pass)
 	{
-		int stride = 0;
-		for (int i : attributes)
-			stride += i;
-			
+		int positionOffset = pass.getAttributeIndex("a_Position"), normalOffset = pass.getAttributeIndex("a_Normal"), stride = pass.getStride();
+		
 		final VectorF tmp1 = VectorF.obtain(), tmp2 = VectorF.obtain(), tmp3 = VectorF.obtain(), tmp4 = VectorF.obtain();
 		final VectorF[] normals = new VectorF[vertices.length / stride];
 
@@ -49,9 +51,9 @@ public class Shape
 
 		for (int i = 0; i < indices.length; i += 3)
 		{
-			tmp1.set(vertices, indices[i], stride, 0);
-			tmp2.set(vertices, indices[i + 1], stride, 0);
-			tmp3.set(vertices, indices[i + 2], stride, 0);
+			tmp1.set(vertices, indices[i], stride, positionOffset);
+			tmp2.set(vertices, indices[i + 1], stride, positionOffset);
+			tmp3.set(vertices, indices[i + 2], stride, positionOffset);
 
 			tmp4.set(tmp2).subtract(tmp1).cross(tmp3.subtract(tmp1));
 			
@@ -69,9 +71,9 @@ public class Shape
 		for (int i = 0; i < normals.length; i++)
 		{
 			normals[i].normalize();
-			vertices[i * stride + stride - 3] = normals[i].x;
-			vertices[i * stride + stride - 2] = normals[i].y;
-			vertices[i * stride + stride - 1] = normals[i].z;
+			vertices[i * stride + normalOffset] = normals[i].x;
+			vertices[i * stride + normalOffset + 1] = normals[i].y;
+			vertices[i * stride + normalOffset + 2] = normals[i].z;
 		}
 
 		for (int i = 0; i < normals.length; i++)
@@ -82,15 +84,13 @@ public class Shape
 		tmp3.release();
 		tmp4.release();
 		
-		init(type, vertices, indices, attributes);
+		init(type, vertices, indices, pass.getAttributes());
 	}
 	
-	public void initGenerateFlatNormals(int type, float[] vertices, short indices[], int... attributes)
+	public void initGenerateFlatNormals(int type, float[] vertices, short indices[], Pass pass)
 	{
-		int stride = 0;
-		for (int i : attributes)
-			stride += i;
-
+		int positionOffset = pass.getAttributeIndex("a_Position"),  normalOffset = pass.getAttributeIndex("a_Normal"), stride = pass.getStride();
+		
 		final VectorF tmp1 = VectorF.obtain(), tmp2 = VectorF.obtain(), tmp3 = VectorF.obtain(), tmp4;
 		final ArrayList<Vertex> vertexObjects = new ArrayList<Vertex>();
 		final ArrayList<Float> vertices2 = new ArrayList<Float>();
@@ -106,19 +106,20 @@ public class Shape
 		for (int i = 0; i < vertices.length; i += stride)
 			vertexObjects.add(new Vertex(vertices, stride, i));
 		
+			
 		for (int i = 0; i < indices.length; i += 3)
 		{
-			tmp1.set(vertices, indices[i], stride, 0);
-			tmp2.set(vertices, indices[i + 1], stride, 0);
-			tmp3.set(vertices, indices[i + 2], stride, 0);
+			tmp1.set(vertices, indices[i], stride, positionOffset);
+			tmp2.set(vertices, indices[i + 1], stride, positionOffset);
+			tmp3.set(vertices, indices[i + 2], stride, positionOffset);
 			
 			tmp4 = VectorF.obtain();
 			normals.add(tmp4);
 			tmp4.set(tmp2).subtract(tmp1).cross(tmp3.subtract(tmp1)).normalize();
 
-			vertexObjects.get(indices[i] & 0xffff).add(vertices2, indices2, i, tmp4);
-			vertexObjects.get(indices[i + 1] & 0xffff).add(vertices2, indices2, i + 1, tmp4);
-			vertexObjects.get(indices[i + 2] & 0xffff).add(vertices2, indices2, i + 2, tmp4);
+			vertexObjects.get(indices[i] & 0xffff).add(vertices2, indices2, i, tmp4, normalOffset);
+			vertexObjects.get(indices[i + 1] & 0xffff).add(vertices2, indices2, i + 1, tmp4, normalOffset);
+			vertexObjects.get(indices[i + 2] & 0xffff).add(vertices2, indices2, i + 2, tmp4, normalOffset);
 		}
 
 		for (int i = 0; i < normals.size(); i++)
@@ -136,7 +137,7 @@ public class Shape
 		for (int i = 0; i < indices2.size(); ++i)
 			indices3.put(indices2.get(i));
 			
-		init(type, vertices3, indices3, false, attributes);
+		init(type, vertices3, indices3, false, pass.getAttributes());
 	}
 	
 	public void init(int type, float[] vertices, short[] indices,  int... attributes)

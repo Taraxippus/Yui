@@ -16,7 +16,7 @@ public class SceneObject extends GameObject
 	
 	public final float[] modelMatrix = new float[16];
 	public final float[] invModelMatrix = new float[16];
-	public final float[] normalMatrix = new float[16];
+	public float[] normalMatrix = new float[16];
 	
 	public final VectorF color = new VectorF(0xCC / 255F, 0xCC / 255F, 0xCC / 255F);
 	public float alpha = 1F;
@@ -31,8 +31,6 @@ public class SceneObject extends GameObject
 	public boolean touchable = false;
 	public boolean enabled = true;
 	
-	protected Shape outlineShape;
-
 	public SceneObject(World world)
 	{
 		this(world, null);
@@ -54,7 +52,21 @@ public class SceneObject extends GameObject
 			
 		return this;
 	}
-	
+
+	@Override
+	public SceneObject setPass(Pass pass)
+	{
+		if (pass.usesMatrix("u_N"))
+		{
+			if (normalMatrix == null)
+				normalMatrix = new float[16];
+		}
+		else if (normalMatrix != null)
+			normalMatrix = null;
+			
+		return (SceneObject) super.setPass(pass);
+	}
+		
 	public SceneObject setColor(int rgb)
 	{
 		this.color.set(Color.red(rgb) / 255F, Color.green(rgb) / 255F, Color.blue(rgb) / 255F);
@@ -155,10 +167,13 @@ public class SceneObject extends GameObject
 		
 		Matrix.invertM(invModelMatrix, 0, modelMatrix, 0);
 		
-		Matrix.setIdentityM(normalMatrix, 0);
-		Matrix.rotateM(normalMatrix, 0, rotation.y, 0, 1, 0);
-		Matrix.rotateM(normalMatrix, 0, rotation.x, 1, 0, 0);
-		Matrix.rotateM(normalMatrix, 0, rotation.z, 0, 0, 1);
+		if (normalMatrix != null)
+		{
+			Matrix.setIdentityM(normalMatrix, 0);
+			Matrix.rotateM(normalMatrix, 0, rotation.y, 0, 1, 0);
+			Matrix.rotateM(normalMatrix, 0, rotation.x, 1, 0, 0);
+			Matrix.rotateM(normalMatrix, 0, rotation.z, 0, 0, 1);
+		}
 		
 		this.radius = getRadius();
 	}
@@ -174,19 +189,12 @@ public class SceneObject extends GameObject
 		super.init();
 		
 		this.updateMatrix();
-		
-		outlineShape = createOutlineShape();
 	}
 
 	@Override
 	public Shape createShape()
 	{
 		return model == null ? super.createShape() : model.getShape();
-	}
-	
-	public Shape createOutlineShape()
-	{
-		return model == null ? null : model.getOutlineShape();
 	}
 	
 	@Override
@@ -206,20 +214,19 @@ public class SceneObject extends GameObject
 		
 		if (renderer.currentPass != getPass())
 		{
-			if (outlineShape == null)
-				outlineShape = createOutlineShape();
-			
 			getPass().onRender(renderer);
-
-			GLES20.glCullFace(GLES20.GL_FRONT);
-			getPass().uniform(renderer, modelMatrix, normalMatrix);
-			uniformChild();
-			if (outlineShape != null)
-				outlineShape.render();
-			GLES20.glCullFace(GLES20.GL_BACK);
 			
 			getPass().getParent().onRender(renderer);
 		}
+	}
+	
+	public void renderChildPass(Renderer renderer)
+	{
+		getPass().uniform(renderer, modelMatrix, normalMatrix);
+		uniformChild();
+		
+		if (shape != null)
+			shape.render();
 	}
 
 	@Override
@@ -231,7 +238,6 @@ public class SceneObject extends GameObject
 		else
 		{
 			model.deleteShape();
-			model.deleteOutlineShape();
 		}
 	}
 	

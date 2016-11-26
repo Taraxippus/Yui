@@ -8,7 +8,7 @@ public class BoxModel extends Model
 	{
 		super(pass);
 		
-		this.generateOutlineNormals = false;
+		this.generateSmoothNormals = false;
 	}
 	
 	@Override
@@ -29,7 +29,7 @@ public class BoxModel extends Model
 
 
 	@Override
-	public float[] getOutlineVertices()
+	public float[] getSmoothVertices()
 	{
 		return new float[]
 		{

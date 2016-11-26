@@ -6,8 +6,7 @@ import com.taraxippus.yui.render.*;
 
 public class SphereModel extends Model
 {
-	public final int rings;
-	public final int sectors;
+	final int rings, sectors;
 
 	public SphereModel(Pass pass, int rings, int sectors)
 	{
@@ -16,7 +15,7 @@ public class SphereModel extends Model
 		this.rings = rings;
 		this.sectors = sectors;
 		
-		this.generateOutlineNormals = false;
+		this.generateSmoothNormals = false;
 	}
 
 	@Override
@@ -45,7 +44,7 @@ public class SphereModel extends Model
 	}
 
 	@Override
-	public float[] getOutlineVertices()
+	public float[] getSmoothVertices()
 	{
 		final float[] vertices = new float[rings * sectors * 6];
 

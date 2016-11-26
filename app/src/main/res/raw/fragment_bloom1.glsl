@@ -12,7 +12,7 @@ varying vec2 v_UV5;
 
 vec4 getBloom(in vec4 pixel)
 {
-	return vec4(pixel.rgb * (max(0.0, dot(pixel, pixel) - 3.5) + 0.5 * max(0.0, pixel.b - pixel.r - 0.25) + 0.25 * max(0.0, pixel.r - pixel.b - 0.25)), 1.0);
+	return *Filter*;
 }
 
 void main()

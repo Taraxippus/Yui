@@ -138,8 +138,8 @@ public class Renderer implements GLSurfaceView.Renderer
 	
 	public void onRenderFrame()
 	{
-		if (main.getFirstPostPass() != null)
-			main.getFirstPostPass().getFramebuffer().bind();
+		if (main.getPostPass() != null)
+			main.getPostPass().getFramebuffer().bind();
 			
 		else
 			Framebuffer.release(this);
