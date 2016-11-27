@@ -19,7 +19,7 @@ public abstract class Model
 	public Model(Pass pass)
 	{
 		this.pass = pass;
-		this.generateShapeNormals = pass.usesAttribute("a_Normal");
+		this.generateShapeNormals = pass.getParent().usesAttribute("a_Normal");
 	}
 	
 	public void init()

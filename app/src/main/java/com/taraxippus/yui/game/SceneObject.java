@@ -56,7 +56,7 @@ public class SceneObject extends GameObject
 	@Override
 	public SceneObject setPass(Pass pass)
 	{
-		if (pass.usesMatrix("u_N"))
+		if (pass.usesMatrix("u_N") || pass.getParent().usesMatrix("u_N"))
 		{
 			if (normalMatrix == null)
 				normalMatrix = new float[16];
@@ -215,7 +215,7 @@ public class SceneObject extends GameObject
 		if (renderer.currentPass != getPass())
 		{
 			getPass().onRender(renderer);
-			
+			renderChildPass(renderer);
 			getPass().getParent().onRender(renderer);
 		}
 	}

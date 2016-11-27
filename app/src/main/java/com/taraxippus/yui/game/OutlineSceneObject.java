@@ -41,6 +41,7 @@ public class OutlineSceneObject extends SceneObject
 		return model == null ? null : model.getSmoothShape();
 	}
 	
+	@Override
 	public void renderChildPass(Renderer renderer)
 	{
 		if (outlineShape == null)

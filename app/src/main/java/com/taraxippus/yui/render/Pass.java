@@ -170,7 +170,7 @@ public class Pass
 		}
 		
 		if (i == attributeNames.length)
-			throw new RuntimeException("This pass has no attribute \"" + attributeNames + "\"!");
+			throw new RuntimeException("This pass has no attribute \"" + attribute + "\"!");
 		
 		return offset;
 	}

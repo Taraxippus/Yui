@@ -47,11 +47,21 @@ public class Renderer implements GLSurfaceView.Renderer
 		
 		ArrayList<Pass> postPasses = new ArrayList<>();
 		for (Pass p : main.getPasses())
+		{
+			if (p == null)
+				System.err.println("A pass is null! This is probably not intended!");
+				
 			if (p instanceof Pass.Post)
 				postPasses.add(p);
-				
+		}
+			
 		if (!postPasses.isEmpty())
+		{
+			if (main.getPostPass() == null)
+				System.err.println("There are post passes, but main.getPostPass() returns null! This will probably not work as intended.");
+				
 			main.world.add(new FullscreenQuad(main.world, postPasses.toArray(new Pass[postPasses.size()])));
+		}
 	}
 
 	@Override
@@ -113,6 +123,7 @@ public class Renderer implements GLSurfaceView.Renderer
 
                 pass.onRender(this);
                 currentPass = pass;
+				main.onRenderPass(pass);
                 main.world.render(this, pass);
             }
         }
