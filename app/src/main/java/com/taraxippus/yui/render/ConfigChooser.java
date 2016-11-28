@@ -28,7 +28,7 @@ public class ConfigChooser implements GLSurfaceView.EGLConfigChooser
 			EGL10.EGL_ALPHA_SIZE, 0,
 			EGL10.EGL_DEPTH_SIZE, 8,
 			EGL10.EGL_SAMPLE_BUFFERS, 1,
-			EGL10.EGL_SAMPLES, 1, 
+			EGL10.EGL_SAMPLES, 4, 
 			EGL10.EGL_NONE
 		};
 
