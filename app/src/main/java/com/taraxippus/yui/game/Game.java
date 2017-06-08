@@ -9,7 +9,7 @@ import com.taraxippus.yui.util.VectorF;
 public abstract class Game implements View.OnTouchListener
 {
 	public final Main main;
-	private boolean defaultCamera;
+	private boolean defaultCamera, invertMovementAxis, invertX, invertZ;
 	
 	public Game(Main main)
 	{
@@ -22,8 +22,8 @@ public abstract class Game implements View.OnTouchListener
 	{
 		if (pointerRight != -1 && defaultCamera)
 			main.camera.position.add(VectorF.obtain()
-								 .set(newXRight - lastXRight, 0, newYRight - lastYRight)
-								 .rotateX(main.camera.rotation.x)
+									 .set(invertX ? lastXRight - newXRight : newXRight - lastXRight, invertMovementAxis ? (invertZ ? newYRight - lastYRight : lastYRight - newYRight) : 0, !invertMovementAxis ? (invertZ ? lastYRight - newYRight : newYRight - lastYRight) : 0)
+								 .rotateX(main.camera.perspective ? main.camera.rotation.x : -90)
 								 .rotateY(main.camera.rotation.y)
 								 .multiplyBy(Main.FIXED_DELTA * Camera.Z_FAR * 0.25F)
 								 .release());
@@ -41,9 +41,16 @@ public abstract class Game implements View.OnTouchListener
 	
 	public void onTap(MotionEvent e) {}
 	
-	public void setUseDefaultCamera(boolean defaultCamera)
+	public void setUseDefaultCamera(boolean defaultCamera, boolean invertMovementAxis)
 	{
 		this.defaultCamera = defaultCamera;
+		this.invertMovementAxis = invertMovementAxis;
+	}
+	
+	public void invertMovement(boolean x, boolean z)
+	{
+		this.invertX = x;
+		this.invertZ = z;
 	}
 	
 	int pointerLeft = -1;

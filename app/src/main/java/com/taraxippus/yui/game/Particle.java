@@ -20,6 +20,7 @@ public class Particle
     public float minSize = 0F, maxSize = 1.15F;
 
 	public float alpha = 1F;
+	public float alphaStart = 1F, alphaEnd = 1F;
 	
     public float lifeTime;
     public float maxLifeTime;
@@ -51,9 +52,10 @@ public class Particle
         }
 
         this.size = minSize + maxSize * (this.lifeTime / this.maxLifeTime);
-
+		this.alpha = alphaEnd + (alphaStart - alphaEnd) * (this.lifeTime / this.maxLifeTime);
+		
         this.prevColor.set(color);
-        this.color.approach(this.color_start, this.color_end, this.lifeTime / this.maxLifeTime);
+        this.color.approach(this.color_start, this.color_end, 1 - this.lifeTime / this.maxLifeTime);
 
         this.prevPosition.set(this.position);
         this.position.add(velocity.x * Main.FIXED_DELTA, velocity.y * Main.FIXED_DELTA, velocity.z * Main.FIXED_DELTA);

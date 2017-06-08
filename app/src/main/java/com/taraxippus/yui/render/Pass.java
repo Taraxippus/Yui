@@ -1,12 +1,11 @@
 package com.taraxippus.yui.render;
 
-import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import com.taraxippus.yui.Main;
 import com.taraxippus.yui.R;
-import com.taraxippus.yui.game.FullscreenQuad;
+import com.taraxippus.yui.texture.NoiseTexture;
+import com.taraxippus.yui.texture.ProceduralTexture;
 import java.util.Random;
 
 public class Pass
@@ -24,15 +23,15 @@ public class Pass
 	
 	public Pass(Main main, int vertex, int fragment, String[] attributeNames, int[] attributes, String[] matrices)
 	{
-		this(main, null, vertex, fragment, 0, 0, false, attributeNames, attributes, matrices);
+		this(main, null, vertex, fragment, 0, 0, false, false, attributeNames, attributes, matrices);
 	}
 	
 	public Pass(Main main, Pass parent, int vertex, int fragment, String[] attributeNames, int[] attributes, String[] matrices)
 	{
-		this(main, parent, vertex, fragment, 0, 0, false, attributeNames, attributes, matrices);
+		this(main, parent, vertex, fragment, 0, 0, false, false, attributeNames, attributes, matrices);
 	}
 	
-	public Pass(Main main, Pass parent, int vertex, int fragment, int frameBufferWidth, int frameBufferHeight, boolean depthBuffer, String[] attributeNames, int[] attributes, String[] matrices)
+	public Pass(Main main, Pass parent, int vertex, int fragment, int frameBufferWidth, int frameBufferHeight, boolean depthBuffer, boolean floatBuffer, String[] attributeNames, int[] attributes, String[] matrices)
 	{
 		this.parent = parent == null ? this : parent;
 		this.ordinal = ID++;
@@ -40,7 +39,7 @@ public class Pass
 		if (frameBufferWidth > 0)
 		{
 			this.framebuffer = new Framebuffer();
-			this.framebuffer.init(depthBuffer, frameBufferWidth, frameBufferHeight);
+			this.framebuffer.init(depthBuffer, floatBuffer, frameBufferWidth, frameBufferHeight);
 		}
 		else
 			this.framebuffer = null;
@@ -130,6 +129,11 @@ public class Pass
 		this.getProgram().use();
 	}
 	
+	public void onFinishRender(Renderer renderer)
+	{
+		
+	}
+	
 	public boolean usesAttribute(String attribute)
 	{
 		for (String s : attributeNames)
@@ -214,23 +218,21 @@ public class Pass
 	
 	public static class Post extends Pass
 	{
-		final int textureUnit;
-		
-		public Post(Main main, int vertex, int fragment, int frameBufferWidth, int frameBufferHeight, boolean depthBuffer)
+		public Post(Main main, int vertex, int fragment, int frameBufferWidth, int frameBufferHeight, boolean depthBuffer, boolean floatBuffer)
 		{
-			super(main, null, vertex, fragment, frameBufferWidth, frameBufferHeight, depthBuffer, new String[] { "a_Position", }, new int[] { 2 }, new String[] {});
+			super(main, null, vertex, fragment, frameBufferWidth, frameBufferHeight, depthBuffer, floatBuffer, new String[] { "a_Position", }, new int[] { 2 }, new String[] {});
 			
-			textureUnit = Texture.getFreeTextureUnit();
-			getFramebuffer().bindTexture(textureUnit);
+			getFramebuffer().bindTexture();
 			
 			if (initInConstructor())
-				GLES20.glUniform1i(getProgram().getUniform("u_Texture"), textureUnit);
+				GLES20.glUniform1i(getProgram().getUniform("u_Texture"), getFramebufferTexUnit());
 		}
+			
 
 		@Override
 		public int getFramebufferTexUnit()
 		{
-			return textureUnit;
+			return getFramebuffer().color.getTextureUnit();
 		}
 		
 		@Override
@@ -245,6 +247,35 @@ public class Pass
 			
 			super.onRender(renderer);
 		}
+
+		@Override
+		public void onFinishRender(Renderer renderer)
+		{
+			GLES20.glEnable(GLES20.GL_BLEND);
+			super.onFinishRender(renderer);
+		}
+	}
+	
+	public static class DefaultParticle extends Pass
+	{
+		public DefaultParticle(Main main)
+		{
+			super(main, com.taraxippus.yui.R.raw.vertex_particle, com.taraxippus.yui.R.raw.fragment_particle, new String[] { "a_Position", "a_Color", "a_Direction" },  new int[] { 4, 4, 2 }, new String[] { "u_MV", "u_P" });
+		}
+		
+		@Override
+		public void onRender(Renderer renderer)
+		{
+			GLES20.glDepthMask(false);
+			super.onRender(renderer);
+		}
+
+		@Override
+		public void onFinishRender(Renderer renderer)
+		{
+			GLES20.glDepthMask(true);
+			super.onFinishRender(renderer);
+		}
 	}
 	
 	public static class DefaultPost extends Post
@@ -252,12 +283,12 @@ public class Pass
 		private final float vignetteFactor, timeVignetteFactor;
 		private final int[] combinePasses;
 		
-		private final Texture dither = new Texture();
+		public final ProceduralTexture dither;
 		
 		public DefaultPost(Main main, int frameBufferWidth, int frameBufferHeight, float vignetteFactor, float timeVignetteFactor, int[] combinePasses)
 		{
-			super(main, R.raw.vertex_post, R.raw.fragment_post, frameBufferWidth, frameBufferHeight, true);
-			
+			super(main, R.raw.vertex_post, R.raw.fragment_post, frameBufferWidth, frameBufferHeight, true, true);
+
 			this.vignetteFactor = vignetteFactor;
 			this.timeVignetteFactor = timeVignetteFactor;
 			this.combinePasses = combinePasses;
@@ -265,23 +296,11 @@ public class Pass
 			initProgram(main, R.raw.vertex_post, R.raw.fragment_post);
 			GLES20.glUniform2f(getProgram().getUniform("u_InvResolution"), 1F / getFramebuffer().width, 1F / getFramebuffer().height);
 			
-			int ditherTexUnit = Texture.getFreeTextureUnit();
-			
-			final int[] colors = new int[main.renderer.width * main.renderer.height];
-			int gray;
-			final Random random = new Random();
-
-			for (int i = 0; i < colors.length; ++i)
-			{
-				gray = random.nextInt(256);
-				colors[i] = Color.rgb(gray, gray, gray);
-			}
-
-			dither.init(Bitmap.createBitmap(colors, 0, main.renderer.width, main.renderer.width, main.renderer.height, Bitmap.Config.RGB_565), GLES20.GL_NEAREST, GLES20.GL_NEAREST, GLES20.GL_CLAMP_TO_EDGE);
-			dither.bind(ditherTexUnit);
+			dither = new NoiseTexture(new Random(), frameBufferWidth, frameBufferHeight);
+			dither.init();
 			
 			GLES20.glUniform1i(getProgram().getUniform("u_Texture"), getFramebufferTexUnit());
-			GLES20.glUniform1i(getProgram().getUniform("u_Dither"), ditherTexUnit);
+			GLES20.glUniform1i(getProgram().getUniform("u_Dither"), dither.getTextureUnit());
 			for (int i = 0; i < combinePasses.length; ++i)
 				GLES20.glUniform1i(getProgram().getUniform("u_Combine" + i), combinePasses[i]);
 		}
@@ -323,9 +342,9 @@ public class Pass
 	{
 		final float r, g, b, constant;
 		
-		public Bloom(Main main, int frameBufferWidth, int frameBufferHeight, boolean dir, float r, float g, float b, float constant)
+		public Bloom(Main main, int frameBufferWidth, int frameBufferHeight, float invScale, boolean dir, float r, float g, float b, float constant)
 		{
-			super(main, R.raw.vertex_bloom, R.raw.fragment_bloom1, frameBufferWidth, frameBufferHeight, false);
+			super(main, R.raw.vertex_bloom, R.raw.fragment_bloom1, frameBufferWidth, frameBufferHeight, false, false);
 
 			this.r = r;
 			this.g = g;
@@ -333,19 +352,19 @@ public class Pass
 			this.constant = constant;
 			
 			initProgram(main, R.raw.vertex_bloom, R.raw.fragment_bloom1);
-			GLES20.glUniform2f(getProgram().getUniform("u_InvResolution"), 1F / getFramebuffer().width, 1F / getFramebuffer().height);
+			GLES20.glUniform2f(getProgram().getUniform("u_InvResolution"), invScale / frameBufferWidth, invScale / frameBufferHeight);
 			GLES20.glUniform2f(getProgram().getUniform("u_Dir"), dir ? 1 : 0, dir ? 0 : 1);
 		}
 		
-		public Bloom(Main main, int frameBufferWidth, int frameBufferHeight, boolean dir)
+		public Bloom(Main main, int frameBufferWidth, int frameBufferHeight, float invScale, boolean dir)
 		{
-			super(main, R.raw.vertex_bloom, R.raw.fragment_bloom2, frameBufferWidth, frameBufferHeight, false);
+			super(main, R.raw.vertex_bloom, R.raw.fragment_bloom2, frameBufferWidth, frameBufferHeight, false, false);
 			
 			r = g = b = 0;
 			constant = Float.NaN;
 			
 			initProgram(main, R.raw.vertex_bloom, R.raw.fragment_bloom2);
-			GLES20.glUniform2f(getProgram().getUniform("u_InvResolution"), 1F / getFramebuffer().width, 1F / getFramebuffer().height);
+			GLES20.glUniform2f(getProgram().getUniform("u_InvResolution"), invScale / frameBufferWidth, invScale / frameBufferHeight);
 			GLES20.glUniform2f(getProgram().getUniform("u_Dir"), dir ? 1 : 0, dir ? 0 : 1);
 		}
 

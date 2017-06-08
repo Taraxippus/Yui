@@ -8,8 +8,8 @@ import android.widget.*;
 
 public class Camera
 {
-	public static final float Z_NEAR = 0.05F;
-	public static final float Z_FAR = 50F;
+	public static final float Z_NEAR = 0.1F;
+	public static final float Z_FAR = 25F;
 	public static final float FOV = 60;
 	
 	public static final float FOLLOW_SMOOTHNESS = 1F;
@@ -22,17 +22,27 @@ public class Camera
 	public final float[] projectionViewMatrix = new float[16];
 	public final float[] invProjectionViewMatrix = new float[16];
 	
-	public float zoom = 0.3F;
+	public float zoom = 0.3F, near, far, fov;
+	private float ratio;
 	
 	public final VectorF position = new VectorF();
 	public final VectorF rotation = new VectorF(-5, 180, 0);
 	public final VectorF eye = new VectorF();
 	
 	public SceneObject target;
+	public boolean perspective = true;
 	
 	public Camera(Main main)
 	{
+		this(main, Z_NEAR, Z_FAR, FOV);
+	}
+	
+	public Camera(Main main, float near, float far, float fov)
+	{
 		this.main = main;
+		this.near = near;
+		this.far = far;
+		this.fov = fov;
 	}
 	
 	public void init()
@@ -70,7 +80,13 @@ public class Camera
 		this.target = target;
 	}
 	
-	float ratio;
+	public void setPerspective(boolean perspective)
+	{
+		this.perspective = perspective;
+		
+		if (ratio != 0)
+			this.updateProjection();
+	}
 	
 	public void onResize(int width, int height)
 	{
@@ -82,11 +98,16 @@ public class Camera
 
 	public void updateProjection()
 	{
-		if (target != null)
-			Matrix.perspectiveM(projectionMatrix, 0, FOV * target.getCameraFOV(), ratio, Z_NEAR, Z_FAR);
-		
+		if (perspective)
+		{
+			if (target != null)
+				Matrix.perspectiveM(projectionMatrix, 0, fov * target.getCameraFOV(), ratio, near, far);
+
+			else
+				Matrix.perspectiveM(projectionMatrix, 0, fov, ratio, near, far);
+		}
 		else
-			Matrix.perspectiveM(projectionMatrix, 0, FOV, ratio, Z_NEAR, Z_FAR);
+			Matrix.orthoM(projectionMatrix, 0, -1, 1, -1F / ratio, 1F / ratio, near, far);
 	}
 	
 	public void updateView()

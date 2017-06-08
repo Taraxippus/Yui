@@ -1,14 +1,15 @@
 package com.taraxippus.yui.game;
 
-import android.opengl.*;
-
+import android.opengl.GLES20;
 import com.taraxippus.yui.R;
-import com.taraxippus.yui.game.*;
-import com.taraxippus.yui.game.*;
-import com.taraxippus.yui.render.*;
-import com.taraxippus.yui.util.*;
-import java.nio.*;
-import java.util.*;
+import com.taraxippus.yui.render.Pass;
+import com.taraxippus.yui.render.Renderer;
+import com.taraxippus.yui.render.Shape;
+import com.taraxippus.yui.texture.Texture;
+import com.taraxippus.yui.util.VectorF;
+import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
+import java.util.Random;
 
 public class ParticleEmitter extends SceneObject
 {
@@ -27,6 +28,7 @@ public class ParticleEmitter extends SceneObject
 
 	public boolean alive = true;
     public boolean respawn = true;
+	public boolean additiveBlending = false;
     public int textureResource = R.drawable.ic_launcher;
     public int particleCount;
 
@@ -37,11 +39,12 @@ public class ParticleEmitter extends SceneObject
     public float minMinSize = 0, maxMinSize = 0.05F, minMaxSize = 0.075F, maxMaxSize = 0.09F;
     public float minOffsetX, maxOffsetX, minOffsetY, maxOffsetY, minOffsetZ, maxOffsetZ;
     public float minMinRadius = 0, maxMinRadius = 0, minMaxRadius = 0, maxMaxRadius = 0;
-
+	public float minAlphaStart = 1, maxAlphaStart = 1, minAlphaEnd = 1, maxAlphaEnd = 1;
+	
     public float acceleration = 0.999F;
 
     private static final Texture defaultTexture = new Texture();
-    private Texture texture = new Texture();
+    private Texture texture;
 
 	public ParticleEmitter(World world, int count)
 	{
@@ -130,7 +133,20 @@ public class ParticleEmitter extends SceneObject
 
         return this;
     }
-
+	
+	public ParticleEmitter setTextureResource(int res)
+	{
+		this.textureResource = res;
+		return this;
+	}
+	
+	public ParticleEmitter setTexture(Texture texture)
+	{
+		this.texture = texture;
+		this.textureResource = texture == null ? R.drawable.ic_launcher : -1;
+		return this;
+	}
+	
 	@Override
 	public void init()
 	{
@@ -143,11 +159,16 @@ public class ParticleEmitter extends SceneObject
         if (!defaultTexture.initialized())
             defaultTexture.init(world.main.resourceHelper.getBitmap(R.drawable.ic_launcher), GLES20.GL_LINEAR_MIPMAP_LINEAR, GLES20.GL_LINEAR, GLES20.GL_REPEAT);
 
+		if (texture == null)
+			texture = new Texture();
+				
         if (textureResource == R.drawable.ic_launcher)
             texture = defaultTexture;
-        else
+        else if (!texture.initialized())
             texture.init(world.main.resourceHelper.getBitmap(textureResource), GLES20.GL_LINEAR_MIPMAP_LINEAR, GLES20.GL_LINEAR, GLES20.GL_REPEAT);
 
+		texture.bind();
+		
 		super.init();
 	}
 	
@@ -167,7 +188,9 @@ public class ParticleEmitter extends SceneObject
             particle.minSize = minMinSize + random.nextFloat() * (maxMinSize - minMinSize);
             particle.maxSize = minMaxSize + random.nextFloat() * (maxMaxSize - minMaxSize);
             particle.acceleration = acceleration;
-
+			particle.alphaStart = minAlphaStart + random.nextFloat() * (maxAlphaStart - minAlphaStart);
+			particle.alphaEnd = minAlphaEnd + random.nextFloat() * (maxAlphaEnd - minAlphaEnd);
+			
             particle.color_start.set(color_start_max).subtract(color_start_min).multiplyBy(random.nextFloat()).add(color_start_min);
             particle.color_end.set(color_end_max).subtract(color_end_min).multiplyBy(random.nextFloat()).add(color_end_min);
         }
@@ -234,9 +257,12 @@ public class ParticleEmitter extends SceneObject
 			shape.buffer(vertices, null);
 		}
 
-        texture.bind(0);
-
+		if (additiveBlending)
+			GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_DST_ALPHA);
+		GLES20.glUniform1i(getPass().getParent().getProgram().getUniform("u_Texture"), texture.getTextureUnit());
 		super.render(renderer);
+		if (additiveBlending)
+			GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 	}
 
 	@Override

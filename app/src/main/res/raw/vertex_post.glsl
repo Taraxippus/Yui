@@ -1,6 +1,6 @@
 #version 100
-precision mediump float;
-precision mediump int;
+precision highp float;
+precision highp int;
 
 attribute vec2 a_Position;
 
@@ -16,9 +16,9 @@ void main()
 {
 	v_UV = a_Position * 0.5 + vec2(0.5, 0.5);
 	v_UV_NW = v_UV.xy + (vec2(-1.0, -1.0) * u_InvResolution);
-	v_UV_NE = v_UV.xy + (vec2(+1.0, -1.0) * u_InvResolution);
-	v_UV_SW = v_UV.xy + (vec2(-1.0, +1.0) * u_InvResolution);
-	v_UV_SE = v_UV.xy + (vec2(+1.0, +1.0) * u_InvResolution);
+	v_UV_NE = v_UV.xy + (vec2( 1.0, -1.0) * u_InvResolution);
+	v_UV_SW = v_UV.xy + (vec2(-1.0,  1.0) * u_InvResolution);
+	v_UV_SE = v_UV.xy + (vec2( 1.0,  1.0) * u_InvResolution);
 	
 	gl_Position = vec4(a_Position, 0.0, 1.0);
 }

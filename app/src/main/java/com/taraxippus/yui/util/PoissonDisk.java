@@ -9,10 +9,10 @@ public class PoissonDisk
 {
 	public static ArrayList<VectorF> randomDistribution(Random random, float width, float height, float minDist, int newPointCount, int maxPoints)
 	{
-		return randomDistribution(random, width, height, minDist, minDist, null, newPointCount, maxPoints);
+		return randomDistribution(random, width, height, minDist, minDist, null, 0, newPointCount, maxPoints);
 	}
 	
-	public static ArrayList<VectorF> randomDistribution(Random random, float width, float height, float minDist, float maxDist, SimplexNoise noise, int newPointCount, int maxPoints)
+	public static ArrayList<VectorF> randomDistribution(Random random, float width, float height, float minDist, float maxDist, SimplexNoise noise, float noiseScale, int newPointCount, int maxPoints)
 	{
 		final float cellSize = (float) (maxDist / Math.sqrt(2));
 		final int gridWidth = (int) Math.ceil(width / cellSize), gridHeight = (int) Math.ceil(height / cellSize);
@@ -40,7 +40,7 @@ public class PoissonDisk
 			candidates:
 			for (i = 0; i < newPointCount; i++)
 			{
-				distance = noise == null ? minDist : minDist + (maxDist - minDist) * (0.5F + noise.getNoise(point.x, point.z));
+				distance = noise == null ? minDist : minDist + (maxDist - minDist) * (0.5F + noise.getNoise(point.x * noiseScale, point.z * noiseScale));
 				
 				newPoint = VectorF.obtain().set(0, 0, distance * (1 + random.nextFloat())).rotateY(360 * random.nextFloat()).add(point);
 				if (newPoint.x < 0 || newPoint.z < 0 || newPoint.x >= width || newPoint.z >= height)
@@ -51,7 +51,7 @@ public class PoissonDisk
 				
 				gridX = (int) (newPoint.x / cellSize);
 				gridZ = (int) (newPoint.z / cellSize);
-				distance = noise == null ? minDist : minDist + (maxDist - minDist) * (0.5F + noise.getNoise(newPoint.x, newPoint.z));
+				distance = noise == null ? minDist : minDist + (maxDist - minDist) * (0.5F + noise.getNoise(newPoint.x * noiseScale, newPoint.z * noiseScale));
 				distance = distance * distance;
 				
 				for (x = -2; x <= 2; ++x)

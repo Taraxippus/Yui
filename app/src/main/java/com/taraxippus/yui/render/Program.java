@@ -68,7 +68,7 @@ public class Program
 
 		if (fragment == 0)
 		{
-			throw new RuntimeException("Error creating fragment shader.");
+			throw new RuntimeException("Error creating fragment shader");
 		}
 
 		program = GLES20.glCreateProgram();

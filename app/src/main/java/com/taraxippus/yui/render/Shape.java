@@ -22,6 +22,16 @@ public class Shape
 		
 	}
 	
+	public static short[] generateIndices(int length)
+	{
+		short[] indices = new short[length];
+		
+		for (int i = 0; i < indices.length; ++i)
+			indices[i] = (short) i;
+		
+		return indices;
+	}
+	
 	public static final float[] addNormals(float[] vertices, Pass pass)
 	{
 		int index = pass.getAttributeIndex("a_Normal"), stride = pass.getStride();
@@ -42,6 +52,9 @@ public class Shape
 	public void initGenerateNormals(int type, float[] vertices, short indices[], boolean weight, Pass pass)
 	{
 		int positionOffset = pass.getAttributeIndex("a_Position"), normalOffset = pass.getAttributeIndex("a_Normal"), stride = pass.getStride();
+		
+		if (indices == null)
+			indices = generateIndices(vertices.length / stride);
 		
 		final VectorF tmp1 = VectorF.obtain(), tmp2 = VectorF.obtain(), tmp3 = VectorF.obtain(), tmp4 = VectorF.obtain();
 		final VectorF[] normals = new VectorF[vertices.length / stride];
@@ -90,6 +103,9 @@ public class Shape
 	public void initGenerateFlatNormals(int type, float[] vertices, short indices[], Pass pass)
 	{
 		int positionOffset = pass.getAttributeIndex("a_Position"),  normalOffset = pass.getAttributeIndex("a_Normal"), stride = pass.getStride();
+		
+		if (indices == null)
+			indices = generateIndices(vertices.length / stride);
 		
 		final VectorF tmp1 = VectorF.obtain(), tmp2 = VectorF.obtain(), tmp3 = VectorF.obtain(), tmp4;
 		final ArrayList<Vertex> vertexObjects = new ArrayList<Vertex>();

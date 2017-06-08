@@ -1,16 +1,15 @@
 package com.taraxippus.yui.render;
 
-import android.opengl.*;
-import android.os.*;
-import android.util.*;
-import com.taraxippus.yui.*;
-import javax.microedition.khronos.egl.*;
-import javax.microedition.khronos.opengles.*;
-
-import javax.microedition.khronos.egl.EGLConfig;
+import android.opengl.GLES20;
+import android.opengl.GLSurfaceView;
+import android.os.SystemClock;
+import com.taraxippus.yui.Main;
+import com.taraxippus.yui.game.FullscreenQuad;
+import com.taraxippus.yui.texture.Texture;
 import com.taraxippus.yui.util.VectorF;
 import java.util.ArrayList;
-import com.taraxippus.yui.game.FullscreenQuad;
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
 
 public class Renderer implements GLSurfaceView.Renderer
 {
@@ -31,9 +30,10 @@ public class Renderer implements GLSurfaceView.Renderer
 		height = main.view.getHeight();
 		
 		VectorF color = main.getClearColor();
-		GLES20.glClearColor(color.x, color.y, color.z, 1);
+		GLES20.glClearColor(color.x, color.y, color.z, 0);
 		GLES20.glEnable(GLES20.GL_DEPTH_TEST);
 		GLES20.glEnable(GLES20.GL_CULL_FACE);
+		GLES20.glEnable(GLES20.GL_DITHER);
 		GLES20.glCullFace(GLES20.GL_BACK);
 		GLES20.glEnable(GLES20.GL_BLEND);
 		GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
@@ -125,6 +125,7 @@ public class Renderer implements GLSurfaceView.Renderer
                 currentPass = pass;
 				main.onRenderPass(pass);
                 main.world.render(this, pass);
+				pass.onFinishRender(this);
             }
         }
         catch (RuntimeException e) { e.printStackTrace(); }

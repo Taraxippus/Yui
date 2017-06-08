@@ -1,7 +1,8 @@
 package com.taraxippus.yui.render;
 
-import android.opengl.*;
-import com.taraxippus.yui.*;
+import android.opengl.GLES20;
+import com.taraxippus.yui.texture.Texture;
+import javax.microedition.khronos.opengles.GL10;
 
 public class Framebuffer
 {
@@ -14,7 +15,7 @@ public class Framebuffer
 	
 	public Framebuffer() {}
 	
-	public void init(boolean hasDepth, int width, int height)
+	public void init(boolean hasDepth, boolean floatBuffer, int width, int height)
 	{
 		if (initialized())
 			delete();
@@ -25,7 +26,8 @@ public class Framebuffer
 			
 		GLES20.glGenFramebuffers(1, framebuffer, 0);
 		
-		color.init(width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, GLES20.GL_RGBA, GLES20.GL_LINEAR, GLES20.GL_LINEAR, GLES20.GL_CLAMP_TO_EDGE);
+		color.init(width, height, GLES20.GL_RGB, floatBuffer ? 0x8D61 : GLES20.GL_UNSIGNED_BYTE, GLES20.GL_RGB, GLES20.GL_LINEAR, GLES20.GL_LINEAR, GLES20.GL_CLAMP_TO_EDGE);
+		color.createTextureUnit();
 		
 		if (hasDepth)
 			depth.init(width, height, GLES20.GL_DEPTH_COMPONENT16, GLES20.GL_UNSIGNED_SHORT, GLES20.GL_DEPTH_COMPONENT, GLES20.GL_NEAREST, GLES20.GL_NEAREST, GLES20.GL_CLAMP_TO_EDGE);
@@ -65,14 +67,14 @@ public class Framebuffer
 			GLES20.glClear(hasDepth ? GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT : GLES20.GL_COLOR_BUFFER_BIT);
 	}
 	
-	public void bindTexture(int texture)
+	public void bindTexture()
 	{
-		color.bind(texture);
+		color.bind();
 	}
 	
-	public void bindDepthTexture(int texture)
+	public void bindDepthTexture()
 	{
-		depth.bind(texture);
+		depth.bind();
 	}
 	
 	public static void release(Renderer renderer)

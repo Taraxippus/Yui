@@ -62,7 +62,7 @@ public abstract class Main extends Activity implements View.OnTouchListener
 	public abstract Pass getPostPass();
 	public void onRenderPass(Pass pass) {}
 	
-	public GLSurfaceView.EGLConfigChooser getConfigChooser() { return new ConfigChooser(this); }
+	public GLSurfaceView.EGLConfigChooser getConfigChooser() { return new ConfigChooser(this, false, true); }
 	public VectorF getClearColor() { return new VectorF(0, 0, 0); }
 	
 	public boolean showFPS() { return true; }
@@ -80,7 +80,7 @@ public abstract class Main extends Activity implements View.OnTouchListener
 		
 		view.setPreserveEGLContextOnPause(true);
 		view.setEGLContextClientVersion(2);
-		view.setEGLConfigChooser(new ConfigChooser(this));
+		view.setEGLConfigChooser(getConfigChooser());
 		
 		view.setRenderer(renderer);
 		view.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);

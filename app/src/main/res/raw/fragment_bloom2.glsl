@@ -12,10 +12,10 @@ varying vec2 v_UV5;
 
 void main()
 {
-	gl_FragColor = texture2D(u_Texture, v_UV1) * 0.06136;
-	gl_FragColor += texture2D(u_Texture, v_UV2) * 0.24477;
-	gl_FragColor += texture2D(u_Texture, v_UV3) * 0.38774;
-	gl_FragColor += texture2D(u_Texture, v_UV4) * 0.24477;
-	gl_FragColor += texture2D(u_Texture, v_UV5) * 0.06136;
+	gl_FragColor = texture2D(u_Texture, v_UV1) * 0.0702702703;
+	gl_FragColor += texture2D(u_Texture, v_UV2) * 0.3162162162;
+	gl_FragColor += texture2D(u_Texture, v_UV3) * 0.2270270270;
+	gl_FragColor += texture2D(u_Texture, v_UV4) * 0.3162162162;
+	gl_FragColor += texture2D(u_Texture, v_UV5) * 0.0702702703;
 }
 

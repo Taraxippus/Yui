@@ -7,12 +7,12 @@ import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
-public class IcoSphereModel extends Model
+public class IcoSphereModel extends ProceduralModel
 {
 	final int recursionLevel;
-	public ArrayList<VectorF> vertices;
-	public ArrayList<TriangleIndices> faces;
 	Dictionary<Integer, Short> middlePointIndexCache;
+	
+	private static final float t = (float) (1.0 + Math.sqrt(5.0)) / 2.0F;
 	
 	public IcoSphereModel(Pass pass, int recursionLevel)
 	{
@@ -48,9 +48,8 @@ public class IcoSphereModel extends Model
 
 	public void generate()
 	{
+		super.generate();
 		middlePointIndexCache = new Hashtable<Integer, Short>();
-		vertices = new ArrayList<VectorF>();
-		faces = new ArrayList<TriangleIndices>();
 		
         vertices.add(VectorF.obtain().set(-1,  t,  0).normalize().multiplyBy(0.5F));
         vertices.add(VectorF.obtain().set( 1,  t,  0).normalize().multiplyBy(0.5F));
@@ -111,29 +110,11 @@ public class IcoSphereModel extends Model
 		}
 	}
 	
-	private static final float t = (float) (1.0 + Math.sqrt(5.0)) / 2.0F;
-	
-	@Override
-	public float[] getVertices()
-	{
-		generate();
-		
-		return VectorF.toArrayList(vertices, true);
-	}
-	
-	@Override
-	public short[] getIndices()
-	{
-		return TriangleIndices.toIndices(faces, 0);
-	}
-
 	@Override
 	protected void freeShapeSpace()
 	{
 		super.freeShapeSpace();
 		
-		vertices = null;
-		faces = null;
 		middlePointIndexCache = null;
 	}
 }

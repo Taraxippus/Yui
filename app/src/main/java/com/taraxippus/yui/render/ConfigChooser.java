@@ -8,10 +8,13 @@ import javax.microedition.khronos.egl.*;
 public class ConfigChooser implements GLSurfaceView.EGLConfigChooser
 {
 	public final Context context;
-
-	public ConfigChooser(Context context)
+	public final boolean enableMSAA, enableDepth;
+	
+	public ConfigChooser(Context context, boolean enableMSAA, boolean enableDepth)
 	{
 		this.context = context;
+		this.enableMSAA = enableMSAA;
+		this.enableDepth = enableDepth;
 	}
 
 	@Override
@@ -26,9 +29,9 @@ public class ConfigChooser implements GLSurfaceView.EGLConfigChooser
 			EGL10.EGL_GREEN_SIZE, 8,
 			EGL10.EGL_BLUE_SIZE, 8,
 			EGL10.EGL_ALPHA_SIZE, 0,
-			EGL10.EGL_DEPTH_SIZE, 8,
+			EGL10.EGL_DEPTH_SIZE, enableDepth ? 8 : 0,
 			EGL10.EGL_SAMPLE_BUFFERS, 1,
-			EGL10.EGL_SAMPLES, 4, 
+			EGL10.EGL_SAMPLES, enableMSAA ? 4 : 1, 
 			EGL10.EGL_NONE
 		};
 
@@ -38,7 +41,7 @@ public class ConfigChooser implements GLSurfaceView.EGLConfigChooser
 
 		if (configCounts[0] == 0) 
 		{
-			throw new RuntimeException("Couln't set up opengl es");
+			throw new RuntimeException("Couln't set up OpenGL ES");
 		} 
 		else
 		{
